@@ -1,0 +1,72 @@
+services:
+  db:
+    image: mysql:5.7
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - wpnet
+    command: --default-authentication-plugin=mysql_native_password
+
+  wordpress:
+    image: wordpress:php8.2-fpm
+    container_name: wordpress
+    depends_on:
+      - db
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp_data:/var/www/html
+    networks:
+      - wpnet
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    depends_on:
+      - wordpress
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - wp_data:/var/www/html:ro
+      # Uncomment the following lines for production with Let's Encrypt certificates
+      # volumes:
+      #   - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      #   - ./nginx/certs:/etc/nginx/certs:ro
+      #   - /etc/letsencrypt/live/yourdomain.com/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro
+      #   - /etc/letsencrypt/live/yourdomain.com/privkey.pem:/etc/nginx/certs/privkey.pem:ro
+    networks:
+      - wpnet
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8081:8080"
+    networks:
+      - wpnet
+    environment:
+      - ADMINER_DEFAULT_SERVER=db
+
+volumes:
+  db_data:
+  wp_data:
+
+networks:
+  wpnet:
+    driver: bridge
