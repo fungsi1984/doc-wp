@@ -71,6 +71,110 @@ Adminer is included for easy MySQL database management.
 
 > Note: Use `db` as the server name because Adminer connects to the MySQL container via the Docker network.
 
+## Using Adminer for SQL Queries and Database Management
+
+Adminer provides a simple web interface for managing your MySQL database. Here’s how to use it for common tasks:
+
+### 1. Logging In
+- Open Adminer in your browser: [http://localhost:8081](http://localhost:8081)
+- Enter your database credentials:
+  - **System:** MySQL
+  - **Server:** db
+  - **Username:** wordpress
+  - **Password:** wordpress
+  - **Database:** wordpress
+
+### 2. Running SQL Queries
+- After logging in, click on **SQL command** in the left menu.
+- Enter your SQL query in the text box and click **Execute**.
+
+### 3. Common SQL Queries for WordPress
+- **View all posts:**
+  ```sql
+  SELECT * FROM wp_posts LIMIT 10;
+  ```
+- **Find all users:**
+  ```sql
+  SELECT * FROM wp_users;
+  ```
+- **Update a user’s email:**
+  ```sql
+  UPDATE wp_users SET user_email='new@email.com' WHERE ID=1;
+  ```
+- **Delete a comment:**
+  ```sql
+  DELETE FROM wp_comments WHERE comment_ID=123;
+  ```
+
+### 4. Other Adminer Features
+- **Browse tables:** Click a table name to view, edit, or delete rows.
+- **Import/Export:** Use the Import or Export links to move data in/out.
+- **Create/Drop tables:** Use Create table or Drop to manage structure.
+
+### 5. Learning SQL Basics
+- Start with `SELECT`, `INSERT`, `UPDATE`, `DELETE` statements.
+- Practice filtering with `WHERE`, sorting with `ORDER BY`, and joining tables with `JOIN`.
+
+> For more SQL examples or a quick tutorial, just ask!
+
+## Exporting and Importing WordPress Posts (Database Content)
+
+WordPress posts, pages, users, and settings are stored in the MySQL database, not as files. To back up or move your content, you need to export/import the database. You can do this easily with Adminer, which is included in this setup.
+
+### Exporting the Database with Adminer
+1. Open Adminer at [http://localhost:8081](http://localhost:8081).
+2. Log in with:
+   - **System:** MySQL
+   - **Server:** db
+   - **Username:** wordpress
+   - **Password:** wordpress
+   - **Database:** wordpress
+3. Click the **Export** link in the left menu.
+4. Choose **SQL** as the output format.
+5. Click **Export** to download a .sql file containing your entire database (including posts, pages, users, etc.).
+
+### Importing the Database with Adminer
+1. Open Adminer at [http://localhost:8081](http://localhost:8081).
+2. Log in with the same credentials as above.
+3. Click the **Import** link in the left menu.
+4. Choose your .sql file (from a previous export or another WordPress site).
+5. Click **Execute** to import the database content.
+
+> **Note:** Importing a database will overwrite existing data. Always back up your current database before importing.
+
+### Export/Import via WordPress Admin (for Posts Only)
+Alternatively, you can use the built-in WordPress Tools > Export/Import feature to move only posts, pages, or media (not full database):
+1. Go to **Tools > Export** in the WordPress admin dashboard to download an XML file of your posts/pages.
+2. Go to **Tools > Import** on another site to upload the XML file.
+
+## Exporting and Importing the WordPress Database with mysqldump
+
+You can also use `mysqldump` to export and import your WordPress database directly from the command line. This is useful for backups, migrations, or advanced workflows.
+
+### Exporting the Database
+Run this command from your project directory to export the database to a file named `wordpress.sql`:
+
+```zsh
+docker exec mysql mysqldump -uwordpress -pwordpress wordpress > wordpress.sql
+```
+- `mysql` is the name of your database container.
+- `-uwordpress -pwordpress` are the username and password (change if you use different credentials).
+- `wordpress` at the end is the database name.
+
+### Importing the Database
+To import a previously exported `wordpress.sql` file:
+
+```zsh
+docker exec -i mysql mysql -uwordpress -pwordpress wordpress < wordpress.sql
+```
+
+> **Note:** This will overwrite the current database content. Always back up your data before importing.
+
+### Alternative: Use Adminer
+You can also use Adminer at [http://localhost:8081](http://localhost:8081) for database export/import via a web interface (see above for details).
+
+---
+
 ## Notes
 - The `:ro` (read-only) flag on the Nginx volume ensures Nginx cannot modify WordPress files, improving security.
 - The `version` attribute in `docker-compose.yml` is omitted as it is now obsolete.
@@ -279,3 +383,25 @@ To use trusted SSL certificates from Let's Encrypt in your Docker Compose setup:
 ---
 
 This will ensure your production site uses trusted SSL certificates and stays secure.
+
+## Viewing PHP Configuration with phpinfo()
+
+To check your PHP configuration inside the Docker container, you can use the phpinfo() function:
+
+1. Create a file named `phpinfo.php` with the following contents:
+   ```php
+   <?php
+   phpinfo();
+   ```
+2. Place this file in the root WordPress directory (the same location as `wp-config.php`).
+   - If you place it in `wp-content`, it may not be accessible due to Nginx configuration.
+   ```
+   example 
+   docker cp /home/desktop/Documents/doc-wp/wp-content/phpinfo.php wordpress:/var/www/html/phpinfo.php
+   ```
+3. Access it in your browser at: [http://localhost:8080/phpinfo.php](http://localhost:8080/phpinfo.php)
+4. **Important:** Delete this file after use for security reasons.
+
+> If you see "file not found" when accessing `phpinfo.php` in `wp-content`, move it to the root WordPress directory as described above.
+
+---
